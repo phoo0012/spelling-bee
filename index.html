@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐝 Spelling Bee Challenge</title>
+    <meta name="description" content="ทดสอบการสะกดคำศัพท์ภาษาอังกฤษ พร้อมเสียงอ่าน และเฉลย">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #12122a;
+            --bg-card: rgba(255, 255, 255, 0.04);
+            --bg-card-hover: rgba(255, 255, 255, 0.08);
+            --accent-yellow: #fbbf24;
+            --accent-amber: #f59e0b;
+            --accent-orange: #f97316;
+            --accent-green: #34d399;
+            --accent-green-glow: rgba(52, 211, 153, 0.3);
+            --accent-red: #f87171;
+            --accent-red-glow: rgba(248, 113, 113, 0.3);
+            --accent-purple: #a78bfa;
+            --accent-blue: #60a5fa;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: rgba(255, 255, 255, 0.08);
+            --shadow-glow: 0 0 60px rgba(251, 191, 36, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans Thai', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .bg-animation .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-animation .orb:nth-child(1) {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-yellow);
+            top: -100px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+
+        .bg-animation .orb:nth-child(2) {
+            width: 350px;
+            height: 350px;
+            background: var(--accent-purple);
+            bottom: -50px;
+            left: -100px;
+            animation-delay: -7s;
+        }
+
+        .bg-animation .orb:nth-child(3) {
+            width: 300px;
+            height: 300px;
+            background: var(--accent-blue);
+            top: 50%;
+            left: 50%;
+            animation-delay: -14s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -50px) scale(1.1); }
+            50% { transform: translate(-30px, 30px) scale(0.9); }
+            75% { transform: translate(40px, 20px) scale(1.05); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+        }
+
+        .header .bee-icon {
+            font-size: 3.5rem;
+            display: block;
+            margin-bottom: 10px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .header .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-top: 6px;
+            font-weight: 400;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+        }
+
+        .stat-item .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            display: block;
+        }
+
+        .stat-item .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+            font-family: 'Noto Sans Thai', sans-serif;
+        }
+
+        .stat-item.total .stat-value { color: var(--accent-blue); }
+        .stat-item.correct .stat-value { color: var(--accent-green); }
+        .stat-item.wrong .stat-value { color: var(--accent-red); }
+        .stat-item.percent .stat-value { color: var(--accent-yellow); }
+
+        /* Progress Bar */
+        .progress-container {
+            margin: 15px 0 25px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 14px 18px;
+            border: 1px solid var(--border);
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar-bg {
+            height: 6px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-yellow), var(--accent-orange));
+            border-radius: 3px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        /* Main Card */
+        .quiz-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 35px 30px;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-glow);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-yellow), transparent);
+        }
+
+        .word-number {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+            color: #000;
+            font-weight: 700;
+            font-size: 0.8rem;
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+        .word-type {
+            color: var(--accent-purple);
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .thai-meaning {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-family: 'Noto Sans Thai', sans-serif;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .hint-text {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Inter', 'Noto Sans Thai', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .btn:hover::after {
+            opacity: 1;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-speak {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            font-size: 1.1rem;
+            padding: 16px 36px;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .btn-speak:hover {
+            box-shadow: 0 6px 30px rgba(59, 130, 246, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-speak.speaking {
+            animation: pulse-speak 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-speak {
+            0%, 100% { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4); }
+            50% { box-shadow: 0 4px 40px rgba(59, 130, 246, 0.7); }
+        }
+
+        .btn-reveal {
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-amber));
+            color: #1a1a2e;
+            font-size: 1.05rem;
+            padding: 14px 32px;
+            box-shadow: 0 4px 20px rgba(251, 191, 36, 0.3);
+            width: 100%;
+        }
+
+        .btn-reveal:hover {
+            box-shadow: 0 6px 30px rgba(251, 191, 36, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .answer-section {
+            display: none;
+            margin-top: 25px;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .answer-word {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+
+        .answer-phonetic {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .answer-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn-correct {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            flex: 1;
+            box-shadow: 0 4px 20px var(--accent-green-glow);
+        }
+
+        .btn-correct:hover {
+            box-shadow: 0 6px 30px var(--accent-green-glow);
+            transform: translateY(-2px);
+        }
+
+        .btn-wrong {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            color: white;
+            flex: 1;
+            box-shadow: 0 4px 20px var(--accent-red-glow);
+        }
+
+        .btn-wrong:hover {
+            box-shadow: 0 6px 30px var(--accent-red-glow);
+            transform: translateY(-2px);
+        }
+
+        /* Feedback Toast */
+        .feedback-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .feedback-overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .feedback-card {
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            max-width: 380px;
+            width: 90%;
+            border: 1px solid var(--border);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .feedback-card .feedback-emoji {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .feedback-card .feedback-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .feedback-card .feedback-message {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 25px;
+            font-family: 'Noto Sans Thai', sans-serif;
+            line-height: 1.6;
+        }
+
+        .feedback-card.correct .feedback-title {
+            color: var(--accent-green);
+        }
+
+        .feedback-card.wrong .feedback-title {
+            color: var(--accent-red);
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, var(--accent-purple), #7c3aed);
+            color: white;
+            padding: 14px 40px;
+            box-shadow: 0 4px 20px rgba(167, 139, 250, 0.3);
+        }
+
+        .btn-next:hover {
+            box-shadow: 0 6px 30px rgba(167, 139, 250, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Completion Screen */
+        .completion-screen {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            animation: slideUp 0.5s ease;
+        }
+
+        .completion-screen .trophy {
+            font-size: 5rem;
+            display: block;
+            margin-bottom: 20px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .completion-screen h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .completion-screen .completion-message {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-family: 'Noto Sans Thai', sans-serif;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .final-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .final-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .final-stat .value {
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .final-stat .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-family: 'Noto Sans Thai', sans-serif;
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+            color: #1a1a2e;
+            padding: 16px 40px;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 20px rgba(251, 191, 36, 0.3);
+        }
+
+        .btn-restart:hover {
+            box-shadow: 0 6px 30px rgba(251, 191, 36, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Start Screen */
+        .start-screen {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .start-screen .big-bee {
+            font-size: 6rem;
+            display: block;
+            margin-bottom: 20px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .start-screen h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            font-family: 'Noto Sans Thai', sans-serif;
+        }
+
+        .start-screen p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 30px;
+            line-height: 1.8;
+            font-family: 'Noto Sans Thai', sans-serif;
+        }
+
+        .start-screen .word-count {
+            display: inline-block;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 20px;
+            margin-bottom: 25px;
+            color: var(--accent-yellow);
+            font-weight: 600;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 20px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: 'Inter', 'Noto Sans Thai', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--accent-yellow);
+            color: var(--accent-yellow);
+        }
+
+        .mode-btn.active {
+            border-color: var(--accent-yellow);
+            background: rgba(251, 191, 36, 0.1);
+            color: var(--accent-yellow);
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+            color: #1a1a2e;
+            padding: 16px 50px;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 30px rgba(251, 191, 36, 0.4);
+        }
+
+        .btn-start:hover {
+            box-shadow: 0 8px 40px rgba(251, 191, 36, 0.6);
+            transform: translateY(-3px);
+        }
+
+        /* Input mode */
+        .input-container {
+            margin: 15px 0;
+        }
+
+        .spelling-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 20px;
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            text-align: center;
+            letter-spacing: 3px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .spelling-input:focus {
+            border-color: var(--accent-yellow);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
+        }
+
+        .spelling-input::placeholder {
+            color: var(--text-muted);
+            font-weight: 400;
+            letter-spacing: 1px;
+            font-size: 1rem;
+        }
+
+        /* Sound wave animation */
+        .sound-wave {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            align-items: center;
+            height: 40px;
+            margin: 15px 0;
+        }
+
+        .sound-wave .bar {
+            width: 4px;
+            background: linear-gradient(to top, var(--accent-yellow), var(--accent-orange));
+            border-radius: 2px;
+            animation: soundBar 0.8s ease-in-out infinite;
+        }
+
+        .sound-wave .bar:nth-child(1) { height: 10px; animation-delay: 0s; }
+        .sound-wave .bar:nth-child(2) { height: 20px; animation-delay: 0.1s; }
+        .sound-wave .bar:nth-child(3) { height: 30px; animation-delay: 0.2s; }
+        .sound-wave .bar:nth-child(4) { height: 20px; animation-delay: 0.3s; }
+        .sound-wave .bar:nth-child(5) { height: 35px; animation-delay: 0.15s; }
+        .sound-wave .bar:nth-child(6) { height: 25px; animation-delay: 0.25s; }
+        .sound-wave .bar:nth-child(7) { height: 15px; animation-delay: 0.35s; }
+
+        @keyframes soundBar {
+            0%, 100% { transform: scaleY(0.5); }
+            50% { transform: scaleY(1.5); }
+        }
+
+        .sound-wave.hidden {
+            display: none;
+        }
+
+        /* Confetti */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 200;
+            overflow: hidden;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            top: -10px;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .container { padding: 12px; }
+            .header h1 { font-size: 1.7rem; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .quiz-card { padding: 25px 18px; }
+            .answer-word { font-size: 2rem; }
+            .answer-buttons { flex-direction: column; }
+            .final-stats { grid-template-columns: 1fr; }
+            .mode-selector { flex-direction: column; align-items: center; }
+        }
+
+        /* Streak indicator */
+        .streak-badge {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin: 10px auto;
+            padding: 6px 16px;
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 20px;
+            color: var(--accent-yellow);
+            font-size: 0.85rem;
+            font-weight: 600;
+            width: fit-content;
+            animation: slideUp 0.3s ease;
+        }
+
+        .streak-badge.show {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background animation -->
+    <div class="bg-animation">
+        <div class="orb"></div>
+        <div class="orb"></div>
+        <div class="orb"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <span class="bee-icon">🐝</span>
+            <h1>Spelling Bee</h1>
+            <p class="subtitle">ทดสอบการสะกดคำศัพท์ภาษาอังกฤษ</p>
+        </header>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="start-screen">
+            <span class="big-bee">🎯</span>
+            <h2>พร้อมท้าทายตัวเองหรือยัง?</h2>
+            <p>ฟังเสียงอ่านคำศัพท์ แล้วลองสะกดดูว่าถูกไหม<br>กดเฉลยเพื่อตรวจคำตอบของคุณ!</p>
+            <div class="word-count">📚 คำศัพท์ทั้งหมด <span id="totalWords">0</span> คำ</div>
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="all" onclick="selectMode('all')">🎲 ทั้งหมด</button>
+                <button class="mode-btn" data-mode="shuffle" onclick="selectMode('shuffle')">🔀 สุ่มลำดับ</button>
+                <button class="mode-btn" data-mode="20" onclick="selectMode('20')">⚡ 20 คำ</button>
+            </div>
+            <button class="btn btn-start" id="btnStart" onclick="startQuiz()">เริ่มเลย! 🚀</button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quizScreen" style="display: none;">
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-item total">
+                    <span class="stat-value" id="statAnswered">0</span>
+                    <span class="stat-label">ตอบแล้ว</span>
+                </div>
+                <div class="stat-item correct">
+                    <span class="stat-value" id="statCorrect">0</span>
+                    <span class="stat-label">ถูก ✓</span>
+                </div>
+                <div class="stat-item wrong">
+                    <span class="stat-value" id="statWrong">0</span>
+                    <span class="stat-label">ผิด ✗</span>
+                </div>
+                <div class="stat-item percent">
+                    <span class="stat-value" id="statPercent">0%</span>
+                    <span class="stat-label">ความแม่น</span>
+                </div>
+            </div>
+
+            <!-- Streak Badge -->
+            <div class="streak-badge" id="streakBadge">
+                🔥 <span id="streakCount">0</span> คำติดต่อกัน!
+            </div>
+
+            <!-- Progress -->
+            <div class="progress-container">
+                <div class="progress-info">
+                    <span>คำที่ <span id="currentNum">1</span> / <span id="totalNum">0</span></span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <!-- Quiz Card -->
+            <div class="quiz-card" id="quizCard">
+                <span class="word-number" id="wordNumber">#50</span>
+                <div class="word-type" id="wordType">(adj.)</div>
+                <div class="thai-meaning" id="thaiMeaning">ความหมายภาษาไทย</div>
+
+                <div class="sound-wave hidden" id="soundWave">
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                </div>
+
+                <button class="btn btn-speak" id="btnSpeak" onclick="speakWord()">
+                    🔊 ฟังเสียงอ่าน
+                </button>
+
+                <div class="input-container">
+                    <input type="text" class="spelling-input" id="spellingInput" placeholder="พิมพ์คำที่ได้ยิน..." autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+
+                <button class="btn btn-reveal" id="btnReveal" onclick="revealAnswer()">
+                    👀 เฉลยคำตอบ
+                </button>
+
+                <div class="answer-section" id="answerSection">
+                    <div class="answer-word" id="answerWord">WORD</div>
+                    <div class="answer-buttons">
+                        <button class="btn btn-correct" onclick="markAnswer(true)">
+                            ✅ ถูกต้อง!
+                        </button>
+                        <button class="btn btn-wrong" onclick="markAnswer(false)">
+                            ❌ ผิดเลย
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completion Screen -->
+        <div id="completionScreen" class="completion-screen">
+            <span class="trophy">🏆</span>
+            <h2>ยอดเยี่ยม! ทำเสร็จแล้ว!</h2>
+            <div class="completion-message" id="completionMessage">
+                คุณทำได้ดีมาก!
+            </div>
+            <div class="final-stats">
+                <div class="final-stat">
+                    <div class="value" style="color: var(--accent-green);" id="finalCorrect">0</div>
+                    <div class="label">ตอบถูก</div>
+                </div>
+                <div class="final-stat">
+                    <div class="value" style="color: var(--accent-red);" id="finalWrong">0</div>
+                    <div class="label">ตอบผิด</div>
+                </div>
+                <div class="final-stat">
+                    <div class="value" style="color: var(--accent-yellow);" id="finalPercent">0%</div>
+                    <div class="label">ความแม่นยำ</div>
+                </div>
+            </div>
+            <button class="btn btn-restart" onclick="restartQuiz()">🔄 เล่นใหม่อีกครั้ง</button>
+        </div>
+    </div>
+
+    <!-- Feedback Overlay -->
+    <div class="feedback-overlay" id="feedbackOverlay">
+        <div class="feedback-card" id="feedbackCard">
+            <span class="feedback-emoji" id="feedbackEmoji">🎉</span>
+            <div class="feedback-title" id="feedbackTitle">เก่งมาก!</div>
+            <div class="feedback-message" id="feedbackMessage">คุณสะกดถูกต้อง สุดยอด!</div>
+            <button class="btn btn-next" onclick="nextWord()">คำถัดไป ➜</button>
+        </div>
+    </div>
+
+    <!-- Confetti Container -->
+    <div class="confetti-container" id="confettiContainer"></div>
+
+    <script>
+        // Word list from images
+        const allWords = [
+            { num: 50, word: "sustain", type: "(v.)", meaning: "รักษาไว้, ทำให้คงอยู่ไป" },
+            { num: 51, word: "recruit", type: "(v.)", meaning: "รับคน, จ้างพนักงาน" },
+            { num: 52, word: "Income", type: "(n.)", meaning: "รายได้" },
+            { num: 53, word: "Omit", type: "(v.)", meaning: "ละไว้, เว้นไว้" },
+            { num: 54, word: "Client", type: "(n.)", meaning: "ลูกค้า, ผู้รับ" },
+            { num: 55, word: "discuss", type: "(v.)", meaning: "สนทนา, แก้ปัญหา" },
+            { num: 56, word: "Deserve", type: "(v.)", meaning: "สมควรได้รับ" },
+            { num: 57, word: "Reflect", type: "(v.)", meaning: "สะท้อนกลับเห็น, แสดงให้เห็น" },
+            { num: 58, word: "Observe", type: "(v.)", meaning: "สังเกต" },
+            { num: 59, word: "assume", type: "(v.)", meaning: "สันนิษฐาน" },
+            { num: 60, word: "Explore", type: "(v.)", meaning: "สำรวจ" },
+            { num: 61, word: "courteous", type: "(adj.)", meaning: "สุภาพเรียบร้อย" },
+            { num: 62, word: "permit", type: "(n.)", meaning: "อนุญาต" },
+            { num: 63, word: "Approve", type: "(v.)", meaning: "อนุมัติ, เห็นชอบ" },
+            { num: 64, word: "Closely", type: "(adv.)", meaning: "อย่างใกล้ชิด, อย่างสนิทสนม" },
+            { num: 65, word: "come up with", type: "(v.)", meaning: "เกิดไอเดีย, มีข้อเสนอแนะ" },
+            { num: 66, word: "Official", type: "(n.)", meaning: "เจ้าหน้าที่" },
+            { num: 67, word: "Impartial", type: "(adj.)", meaning: "เป็นกลาง, ยุติธรรม" },
+            { num: 68, word: "Commercial", type: "(n.)", meaning: "โฆษณาทางโทรทัศน์, วิทยุ" },
+            { num: 69, word: "Persuade", type: "(v.)", meaning: "โน้มน้าว" },
+            { num: 70, word: "Nonprofit", type: "(adj.)", meaning: "ไม่แสวงหากำไร" },
+            { num: 71, word: "activate", type: "(v.)", meaning: "กระตุ้น" },
+            { num: 72, word: "productive", type: "(adj.)", meaning: "ก่อให้เกิดผล, มีประสิทธิภาพ" },
+            { num: 73, word: "discretion", type: "(n.)", meaning: "การใช้ดุลพินิจ" },
+            { num: 74, word: "Charity", type: "(n.)", meaning: "การกุศล" },
+            { num: 75, word: "Expansion", type: "(n.)", meaning: "การขยายตัว" },
+            { num: 76, word: "provision", type: "(n.)", meaning: "การจัดเตรียม" },
+            { num: 77, word: "appointment", type: "(n.)", meaning: "การนัดหมาย" },
+            { num: 78, word: "Consumption", type: "(n.)", meaning: "การบริโภค, การใช้" },
+            { num: 79, word: "precaution", type: "(n.)", meaning: "การป้องกันไว้ก่อน" },
+            { num: 80, word: "Assurance", type: "(n.)", meaning: "การรับประกัน, ความเชื่อมั่น" },
+            { num: 81, word: "designate", type: "(v.)", meaning: "กำหนด, แต่งตั้ง" },
+            { num: 82, word: "Proposal", type: "(n.)", meaning: "ข้อเสนอ" },
+            { num: 83, word: "Interrupt", type: "(v.)", meaning: "ขัดจังหวะ" },
+            { num: 84, word: "durable", type: "(adj.)", meaning: "คงทน, มั่นคง" },
+            { num: 85, word: "take charge of", type: "(v.)", meaning: "ควบคุม, ดูแล" },
+            { num: 86, word: "Relation", type: "(n.)", meaning: "ความสัมพันธ์" },
+            { num: 87, word: "Calculate", type: "(v.)", meaning: "คำนวณ, คาดการณ์" },
+            { num: 88, word: "Attribute", type: "(n.)", meaning: "คุณภาพ, คุณสมบัติ" },
+            { num: 89, word: "Establish", type: "(v.)", meaning: "จัดตั้ง, ก่อตั้ง" },
+            { num: 90, word: "Allocate", type: "(v.)", meaning: "จัดสรร (หน้าที่, เงิน)" },
+            { num: 91, word: "probation", type: "(n.)", meaning: "ช่วงทดลองงาน" },
+            { num: 92, word: "tangible", type: "(adj.)", meaning: "จับต้อง, จับต้องได้" },
+            { num: 93, word: "Proficient", type: "(adj.)", meaning: "ชำนาญ, ชำชอง" },
+            { num: 115, word: "Prevalent", type: "(adj.)", meaning: "พบได้ทั่วไป" },
+            { num: 116, word: "Consider", type: "(v.)", meaning: "พิจารณา" },
+            { num: 117, word: "Several", type: "(adj.)", meaning: "มากมาย, หลากหลาย" },
+            { num: 118, word: "Renowned", type: "(adj.)", meaning: "มีชื่อเสียง" },
+            { num: 119, word: "effective", type: "(adj.)", meaning: "มีผลบังคับใช้" },
+            { num: 120, word: "Abide by", type: "(v.)", meaning: "เชื่อฟัง/ปฏิบัติตาม" },
+            { num: 121, word: "Relocate", type: "(v.)", meaning: "ย้ายที่ใหม่" },
+            { num: 122, word: "Compromise", type: "(v.)", meaning: "ประนีประนอม" },
+            { num: 123, word: "Grocery", type: "(n.)", meaning: "ร้านขายของชำ, ของอุปโภคบริโภค" },
+            { num: 124, word: "Revenue", type: "(n.)", meaning: "รายได้" },
+            { num: 125, word: "Hesitant", type: "(adj.)", meaning: "ลังเล, ไม่แน่ใจ" },
+            { num: 126, word: "Outdated", type: "(adj.)", meaning: "ล้าสมัย" },
+            { num: 127, word: "encourage", type: "(v.)", meaning: "สนับสนุน, กระตุ้น" },
+            { num: 128, word: "personal", type: "(adj.)", meaning: "ส่วนบุคคล" },
+            { num: 129, word: "Meaningful", type: "(adv.)", meaning: "สำคัญ, มีความหมาย" },
+            { num: 130, word: "headquarters", type: "(n.)", meaning: "สำนักงานใหญ่" },
+            { num: 131, word: "Incentive", type: "(n.)", meaning: "สิ่งกระตุ้น, สิ่งจูงใจ" },
+            { num: 132, word: "explain", type: "(v.)", meaning: "อธิบาย" },
+            { num: 133, word: "casually", type: "(adv.)", meaning: "อย่างไม่เป็นทางการ" },
+            { num: 134, word: "Rapidly", type: "(adv.)", meaning: "อย่างรวดเร็ว" },
+            { num: 135, word: "Severely", type: "(adv.)", meaning: "อย่างรุนแรง" },
+            { num: 136, word: "Independent", type: "(adj.)", meaning: "พึ่งพาตัวเองได้" },
+            { num: 137, word: "specific", type: "(adj.)", meaning: "เฉพาะเจาะจง" },
+            { num: 138, word: "Congratulate", type: "(v.)", meaning: "แสดงความยินดี" },
+            { num: 139, word: "remarkable", type: "(adj.)", meaning: "โดดเด่น, ไม่ธรรมดา" },
+            { num: 140, word: "Primarily", type: "(adv.)", meaning: "โดยส่วนมากแล้ว ตั้งแต่แรก" },
+            { num: 141, word: "Irrelevant", type: "(adj.)", meaning: "ไม่เกี่ยวข้อง, นอกประเด็น" },
+            { num: 142, word: "Incapable", type: "(adj.)", meaning: "ไม่มีความสามารถทำได้" },
+            { num: 143, word: "strategy", type: "(n.)", meaning: "กลยุทธ์" },
+            { num: 144, word: "construction", type: "(n.)", meaning: "การก่อสร้าง" },
+            { num: 145, word: "Inspection", type: "(n.)", meaning: "การตรวจสอบ" },
+            { num: 146, word: "publication", type: "(n.)", meaning: "การตีพิมพ์" },
+            { num: 147, word: "recognition", type: "(n.)", meaning: "การยอมรับ" },
+            { num: 148, word: "maternity leave", type: "(n.)", meaning: "การลาคลอด" },
+            { num: 149, word: "Instructor", type: "(n.)", meaning: "ครู ผู้สอน" },
+            { num: 150, word: "Opposition", type: "(n.)", meaning: "ความขัดแย้ง, ความไม่เห็นด้วยกัน" },
+            { num: 151, word: "capacity", type: "(n.)", meaning: "ความจุ, ความสามารถ" },
+            { num: 152, word: "Satisfaction", type: "(n.)", meaning: "ความพึงพอใจ" },
+            { num: 153, word: "Accomplishment", type: "(n.)", meaning: "ความสำเร็จ" },
+            { num: 154, word: "Accommodate", type: "(v.)", meaning: "จัดให้เหมาะสม, ปรับ" },
+            { num: 155, word: "temporary", type: "(adj.)", meaning: "ชั่วคราว" },
+            { num: 156, word: "Reputation", type: "(n.)", meaning: "ชื่อเสียง" },
+            { num: 157, word: "familiarize", type: "(v.)", meaning: "ทำให้คุ้นเคย" },
+            { num: 158, word: "facilitate", type: "(v.)", meaning: "ทำให้ง่ายขึ้น, สะดวกขึ้น" },
+            { num: 159, word: "Additional", type: "(adj.)", meaning: "ที่เพิ่มเติม, ส่วนเพิ่มเติม" },
+            { num: 160, word: "comprehensive", type: "(adj.)", meaning: "ที่ครอบคลุม" },
+            { num: 161, word: "Prospective", type: "(adj.)", meaning: "ที่คาดหวังไว้, ที่คาดว่าจะเกิดขึ้น" },
+            { num: 162, word: "Presentable", type: "(adj.)", meaning: "ที่ดูได้, พอจะยอมได้" },
+            { num: 163, word: "compatible", type: "(adj.)", meaning: "ที่ทำงานร่วมกันได้, เข้ากันได้" },
+            { num: 164, word: "affordable", type: "(adj.)", meaning: "ที่สามารถจ่ายได้, ราคาจับต้องได้" },
+            { num: 165, word: "Innovation", type: "(n.)", meaning: "นวัตกรรม, การสร้างสิ่งใหม่" },
+            { num: 166, word: "orientation", type: "(n.)", meaning: "ปฐมนิเทศ" },
+            { num: 167, word: "Evaluate", type: "(v.)", meaning: "ประเมิน" },
+            { num: 168, word: "Dependable", type: "(adj.)", meaning: "พึ่งพาได้, ไว้วางใจ" },
+            { num: 169, word: "phenomenal", type: "(adj.)", meaning: "มหัศจรรย์, เป็นปรากฏการณ์" },
+            { num: 170, word: "Knowledgeable", type: "(adj.)", meaning: "มีความรู้, ฉลาด" },
+            { num: 171, word: "eligible", type: "(adj.)", meaning: "มีคุณสมบัติเหมาะสม" },
+            { num: 172, word: "Advantageous", type: "(adj.)", meaning: "มีประโยชน์, ได้เปรียบ" },
+            { num: 173, word: "collaborate", type: "(v.)", meaning: "ร่วมมือ, ทำงานร่วมกับคนอื่น" },
+            { num: 174, word: "deliberate", type: "(adj.)", meaning: "รอบคอบ, ตั้งใจ" },
+            { num: 175, word: "Identify", type: "(v.)", meaning: "ระบุ" },
+            { num: 176, word: "directory", type: "(n.)", meaning: "สมุดรายชื่อ" },
+            { num: 177, word: "demonstrate", type: "(v.)", meaning: "สาธิต, แสดงให้เห็น" },
+        ];
+
+        // Game state
+        let currentWords = [];
+        let currentIndex = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+        let streak = 0;
+        let bestStreak = 0;
+        let mode = 'all';
+        let isSpeaking = false;
+
+        // Encouragement messages
+        const correctMessages = [
+            { emoji: "🎉", title: "เก่งมาก!", msg: "สะกดได้ถูกต้อง สุดยอดไปเลย! 🌟" },
+            { emoji: "🔥", title: "เยี่ยมเลย!", msg: "คุณเก่งมากเลย สู้ๆ นะ! 💪" },
+            { emoji: "⭐", title: "ยอดเยี่ยม!", msg: "ฝีมือระดับเทพเลย! ✨" },
+            { emoji: "🏅", title: "สุดปัง!", msg: "ทำได้ดีมาก เดินหน้าต่อเลย! 🚀" },
+            { emoji: "💯", title: "100 คะแนน!", msg: "ถูกต้องเป๊ะ! เก่งสุดๆ 🎯" },
+            { emoji: "👑", title: "แชมป์เลย!", msg: "สะกดแม่นมาก สู้ต่อไปนะ! 💎" },
+            { emoji: "🌈", title: "Amazing!", msg: "คุณทำได้ดีมากจริงๆ! 🦋" },
+            { emoji: "🎊", title: "Perfect!", msg: "ไม่มีอะไรจะพูดนอกจากเก่งมาก! 🎆" },
+        ];
+
+        const wrongMessages = [
+            { emoji: "💪", title: "ไม่เป็นไร!", msg: "เอาใหม่ได้! พลาดได้ไม่ใช่เรื่องใหญ่ 🌟" },
+            { emoji: "🌱", title: "สู้ๆ นะ!", msg: "จำไว้แล้วคราวหน้าจะถูก! 💡" },
+            { emoji: "📝", title: "จดไว้เลย!", msg: "จำคำนี้ไว้นะ คราวหน้าจะได้ถูก! ✏️" },
+            { emoji: "🤗", title: "ช่างมันเถอะ!", msg: "ผิดพลาดคือบทเรียน ครั้งหน้าจะเก่งขึ้น! 📖" },
+            { emoji: "🎈", title: "ไม่เป็นไร!", msg: "ฝึกบ่อยๆ แล้วจะสะกดได้แน่นอน! 🎯" },
+            { emoji: "🌻", title: "อย่าเพิ่งท้อ!", msg: "คนเก่งก็พลาดได้ สู้ต่อไป! ⭐" },
+        ];
+
+        // Initialize
+        document.getElementById('totalWords').textContent = allWords.length;
+
+        function selectMode(m) {
+            mode = m;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === m);
+            });
+        }
+
+        function shuffleArray(arr) {
+            const shuffled = [...arr];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function startQuiz() {
+            if (mode === 'shuffle') {
+                currentWords = shuffleArray(allWords);
+            } else if (mode === '20') {
+                currentWords = shuffleArray(allWords).slice(0, 20);
+            } else {
+                currentWords = [...allWords];
+            }
+
+            currentIndex = 0;
+            correctCount = 0;
+            wrongCount = 0;
+            streak = 0;
+            bestStreak = 0;
+
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('quizScreen').style.display = 'block';
+            document.getElementById('completionScreen').style.display = 'none';
+            document.getElementById('totalNum').textContent = currentWords.length;
+
+            updateStats();
+            loadWord();
+        }
+
+        function loadWord() {
+            const word = currentWords[currentIndex];
+            document.getElementById('wordNumber').textContent = `#${word.num}`;
+            document.getElementById('wordType').textContent = word.type;
+            document.getElementById('thaiMeaning').textContent = word.meaning;
+            document.getElementById('currentNum').textContent = currentIndex + 1;
+
+            // Reset UI
+            document.getElementById('answerSection').style.display = 'none';
+            document.getElementById('btnReveal').style.display = 'block';
+            document.getElementById('btnSpeak').style.display = 'flex';
+            document.getElementById('spellingInput').value = '';
+            document.getElementById('spellingInput').style.display = 'block';
+            document.getElementById('soundWave').classList.add('hidden');
+
+            // Update progress
+            const progress = ((currentIndex) / currentWords.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+
+            // Auto-speak
+            setTimeout(() => speakWord(), 500);
+        }
+
+        function speakWord() {
+            if (isSpeaking) return;
+
+            const word = currentWords[currentIndex];
+            const utterance = new SpeechSynthesisUtterance(word.word);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.8;
+            utterance.pitch = 1;
+
+            const btn = document.getElementById('btnSpeak');
+            const wave = document.getElementById('soundWave');
+
+            isSpeaking = true;
+            btn.classList.add('speaking');
+            btn.innerHTML = '🔊 กำลังอ่าน...';
+            wave.classList.remove('hidden');
+
+            utterance.onend = () => {
+                isSpeaking = false;
+                btn.classList.remove('speaking');
+                btn.innerHTML = '🔊 ฟังอีกครั้ง';
+                wave.classList.add('hidden');
+            };
+
+            utterance.onerror = () => {
+                isSpeaking = false;
+                btn.classList.remove('speaking');
+                btn.innerHTML = '🔊 ฟังเสียงอ่าน';
+                wave.classList.add('hidden');
+            };
+
+            speechSynthesis.cancel();
+            speechSynthesis.speak(utterance);
+        }
+
+        function revealAnswer() {
+            const word = currentWords[currentIndex];
+            document.getElementById('answerWord').textContent = word.word;
+            document.getElementById('answerSection').style.display = 'block';
+            document.getElementById('btnReveal').style.display = 'none';
+
+            // Check user input automatically
+            const userInput = document.getElementById('spellingInput').value.trim();
+            if (userInput) {
+                const isCorrect = userInput.toLowerCase() === word.word.toLowerCase();
+                const input = document.getElementById('spellingInput');
+                if (isCorrect) {
+                    input.style.borderColor = 'var(--accent-green)';
+                    input.style.color = 'var(--accent-green)';
+                } else {
+                    input.style.borderColor = 'var(--accent-red)';
+                    input.style.color = 'var(--accent-red)';
+                }
+            }
+
+            // Speak the word again
+            speakWord();
+        }
+
+        function markAnswer(isCorrect) {
+            if (isCorrect) {
+                correctCount++;
+                streak++;
+                if (streak > bestStreak) bestStreak = streak;
+            } else {
+                wrongCount++;
+                streak = 0;
+            }
+
+            updateStats();
+            showFeedback(isCorrect);
+        }
+
+        function updateStats() {
+            const answered = correctCount + wrongCount;
+            document.getElementById('statAnswered').textContent = answered;
+            document.getElementById('statCorrect').textContent = correctCount;
+            document.getElementById('statWrong').textContent = wrongCount;
+
+            const percent = answered > 0 ? Math.round((correctCount / answered) * 100) : 0;
+            document.getElementById('statPercent').textContent = percent + '%';
+
+            // Streak badge
+            const badge = document.getElementById('streakBadge');
+            if (streak >= 3) {
+                badge.classList.add('show');
+                document.getElementById('streakCount').textContent = streak;
+            } else {
+                badge.classList.remove('show');
+            }
+        }
+
+        function showFeedback(isCorrect) {
+            const overlay = document.getElementById('feedbackOverlay');
+            const card = document.getElementById('feedbackCard');
+
+            let msg;
+            if (isCorrect) {
+                msg = correctMessages[Math.floor(Math.random() * correctMessages.length)];
+                card.className = 'feedback-card correct';
+                if (streak >= 5) {
+                    spawnConfetti();
+                }
+            } else {
+                msg = wrongMessages[Math.floor(Math.random() * wrongMessages.length)];
+                card.className = 'feedback-card wrong';
+            }
+
+            document.getElementById('feedbackEmoji').textContent = msg.emoji;
+            document.getElementById('feedbackTitle').textContent = msg.title;
+            document.getElementById('feedbackMessage').textContent = msg.msg;
+
+            overlay.classList.add('show');
+        }
+
+        function nextWord() {
+            document.getElementById('feedbackOverlay').classList.remove('show');
+
+            // Reset input style
+            const input = document.getElementById('spellingInput');
+            input.style.borderColor = 'var(--border)';
+            input.style.color = 'var(--text-primary)';
+
+            currentIndex++;
+
+            if (currentIndex >= currentWords.length) {
+                showCompletion();
+            } else {
+                loadWord();
+            }
+        }
+
+        function showCompletion() {
+            document.getElementById('quizScreen').style.display = 'none';
+            document.getElementById('completionScreen').style.display = 'block';
+
+            const total = correctCount + wrongCount;
+            const percent = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+
+            document.getElementById('finalCorrect').textContent = correctCount;
+            document.getElementById('finalWrong').textContent = wrongCount;
+            document.getElementById('finalPercent').textContent = percent + '%';
+
+            let message = '';
+            if (percent >= 90) {
+                message = '🌟 สุดยอดมาก! คุณเก่งมากจริงๆ!\nคะแนนเต็มเกือบ 100% เลย!';
+            } else if (percent >= 70) {
+                message = '✨ ทำได้ดีมาก! เก่งขึ้นเรื่อยๆ!\nฝึกอีกนิดจะสมบูรณ์แบบเลย!';
+            } else if (percent >= 50) {
+                message = '💪 ไม่เลวเลย! กำลังพัฒนาอยู่!\nฝึกบ่อยๆ แล้วจะเก่งขึ้นแน่นอน!';
+            } else {
+                message = '🌱 สู้ๆ นะ! ทุกคนเริ่มจากตรงนี้!\nฝึกทุกวันแล้วจะเก่งขึ้น!';
+            }
+            document.getElementById('completionMessage').textContent = message;
+
+            spawnConfetti();
+        }
+
+        function restartQuiz() {
+            document.getElementById('completionScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'block';
+        }
+
+        function spawnConfetti() {
+            const container = document.getElementById('confettiContainer');
+            const colors = ['#fbbf24', '#f59e0b', '#34d399', '#60a5fa', '#a78bfa', '#f87171', '#fb923c'];
+
+            for (let i = 0; i < 50; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.animationDelay = Math.random() * 2 + 's';
+                piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+                piece.style.width = (6 + Math.random() * 8) + 'px';
+                piece.style.height = (6 + Math.random() * 8) + 'px';
+                piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                container.appendChild(piece);
+            }
+
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 4000);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const answerSection = document.getElementById('answerSection');
+                if (answerSection.style.display === 'block') {
+                    // If answer is shown, do nothing (user should press correct/wrong)
+                } else if (document.getElementById('quizScreen').style.display !== 'none') {
+                    revealAnswer();
+                }
+            }
+        });
+
+        // Enter key on input reveals answer
+        document.getElementById('spellingInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                revealAnswer();
+            }
+        });
+    </script>
+</body>
+</html>
