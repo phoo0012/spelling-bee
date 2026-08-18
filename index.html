@@ -1143,15 +1143,32 @@
             setTimeout(() => speakWord(), 500);
         }
 
+        // Get the best available English voice
+        let bestVoice = null;
+        function loadVoices() {
+            const voices = speechSynthesis.getVoices();
+            // Priority: Google US English > Microsoft natural voices > any US English
+            const priorities = [
+                v => v.name.includes('Google') && v.lang.startsWith('en'),
+                v => v.name.includes('Natural') && v.lang.startsWith('en-US'),
+                v => v.name.includes('Online') && v.lang.startsWith('en-US'),
+                v => v.name.includes('Zira') || v.name.includes('David') || v.name.includes('Mark'),
+                v => v.lang === 'en-US',
+                v => v.lang.startsWith('en'),
+            ];
+            for (const check of priorities) {
+                const found = voices.find(check);
+                if (found) { bestVoice = found; return; }
+            }
+            if (voices.length > 0) bestVoice = voices[0];
+        }
+        speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices();
+
         function speakWord() {
             if (isSpeaking) return;
 
             const word = currentWords[currentIndex];
-            const utterance = new SpeechSynthesisUtterance(word.word);
-            utterance.lang = 'en-US';
-            utterance.rate = 0.8;
-            utterance.pitch = 1;
-
             const btn = document.getElementById('btnSpeak');
             const wave = document.getElementById('soundWave');
 
@@ -1160,22 +1177,53 @@
             btn.innerHTML = '🔊 กำลังอ่าน...';
             wave.classList.remove('hidden');
 
-            utterance.onend = () => {
+            speechSynthesis.cancel();
+
+            // First utterance: slow and clear
+            const utt1 = new SpeechSynthesisUtterance(word.word);
+            utt1.lang = 'en-US';
+            utt1.rate = 0.65;
+            utt1.pitch = 1.0;
+            utt1.volume = 1.0;
+            if (bestVoice) utt1.voice = bestVoice;
+
+            // Second utterance: normal speed
+            const utt2 = new SpeechSynthesisUtterance(word.word);
+            utt2.lang = 'en-US';
+            utt2.rate = 0.85;
+            utt2.pitch = 1.0;
+            utt2.volume = 1.0;
+            if (bestVoice) utt2.voice = bestVoice;
+
+            utt2.onend = () => {
                 isSpeaking = false;
                 btn.classList.remove('speaking');
                 btn.innerHTML = '🔊 ฟังอีกครั้ง';
                 wave.classList.add('hidden');
             };
 
-            utterance.onerror = () => {
+            utt2.onerror = () => {
                 isSpeaking = false;
                 btn.classList.remove('speaking');
                 btn.innerHTML = '🔊 ฟังเสียงอ่าน';
                 wave.classList.add('hidden');
             };
 
-            speechSynthesis.cancel();
-            speechSynthesis.speak(utterance);
+            utt1.onend = () => {
+                // Small pause between two reads
+                setTimeout(() => {
+                    speechSynthesis.speak(utt2);
+                }, 400);
+            };
+
+            utt1.onerror = () => {
+                isSpeaking = false;
+                btn.classList.remove('speaking');
+                btn.innerHTML = '🔊 ฟังเสียงอ่าน';
+                wave.classList.add('hidden');
+            };
+
+            speechSynthesis.speak(utt1);
         }
 
         function revealAnswer() {
